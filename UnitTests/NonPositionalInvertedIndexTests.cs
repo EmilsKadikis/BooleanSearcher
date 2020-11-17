@@ -1,0 +1,43 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using BooleanSearcher;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace UnitTests
+{
+    [TestClass]
+    public class NonPositionalInvertedIndexTests
+    {
+        [TestMethod]
+        public void Index_Create()
+        {
+
+            var documents = new List<Document>
+            {
+                new Document
+                {
+                    Id = 1,
+                    Text = "Test document number 1. Ut enim ad minim veniam."
+                },
+                new Document
+                {
+                    Id = 2,
+                    Text = "Test document number 2. Lorem ipsum."
+                },
+                new Document
+                {
+                    Id = 3,
+                    Text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+                },
+            };
+
+            IIndex index = new NonPositionalInvertedIndex(documents);
+            var result = index.PostingsList("Lorem");
+
+            Assert.AreEqual(2, result.Count);
+            Assert.AreEqual(2, result[0]);
+            Assert.AreEqual(3, result[1]);
+        }
+    }
+}
