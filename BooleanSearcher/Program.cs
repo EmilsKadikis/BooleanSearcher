@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace BooleanSearcher
@@ -8,13 +9,21 @@ namespace BooleanSearcher
     {
         static void Main(string[] args)
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
             IIndex index = Index("postillon.csv");
+            stopwatch.Stop();
+            Console.WriteLine($"Index created in {stopwatch.ElapsedMilliseconds} ms");
             var queryRunner = new QueryRunner(index);
 
-            var result1 = queryRunner.Query("*konferenz", "Presse"); 
+            stopwatch.Reset();
+            stopwatch.Start();
+            var result1 = queryRunner.Query("*konferenz", "Presse");
             var result2 = queryRunner.Query("fahrrad", "*weg*");
             var result3 = queryRunner.Query("Frank*", "*stein");
             var result4 = queryRunner.Query("Welt*konferenz", "Paris");
+            stopwatch.Stop();
+            Console.WriteLine($"Queries run in {stopwatch.ElapsedMilliseconds} ms");
 
             PrintQueryResult(index, "*konferenz AND Presse", result1);
             PrintQueryResult(index, "fahrrad AND *weg*", result2);

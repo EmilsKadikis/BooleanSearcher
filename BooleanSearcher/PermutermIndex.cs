@@ -8,8 +8,8 @@ namespace BooleanSearcher
 {
     public class PermutermIndex : IndexBase
     {
-        // Dictionaries in C# are implemented as hash tables and provide a O(1) lookup time. This one uses the normalized term as the key, and holds the posting list size and posting list id.
-        protected Dictionary<string, DictionaryEntry> termDictionary = new Dictionary<string, DictionaryEntry>();
+        // Tree that contains all rotated terms, used for fast queries.
+        protected CompactPrefixTree prefixTree = new CompactPrefixTree();
 
         // With an integer key, this dictionary effectively functions like an array (but one where we don't have to manually worry about allocating enough space beforehand)
         // since the hash of an integer is equal to the integer itself.
@@ -55,41 +55,24 @@ namespace BooleanSearcher
         protected override void AddTerm(string term, List<int> documentIds)
         {
             term += "$";
-            // If term is already in the dictionary, add documentIds to the already existing posting list.
-            if (termDictionary.ContainsKey(term))
+            if(prefixTree.DoesTermExist(term, out int? postingsListId))
             {
-                var dictionaryEntry = termDictionary[term];
-                var postingsListId = dictionaryEntry.PostingListId;
-                var postingList = postingLists[postingsListId];
+                var postingList = postingLists[postingsListId.Value];
 
                 // Add new postings, eliminate duplicates and order it again to be in ascending order.
                 postingList.AddRange(documentIds);
                 postingList = postingList.Distinct().OrderBy(id => id).ToList();
 
                 // Update posting list and posting list size that's stored in dictionary.
-                postingLists[postingsListId] = postingList;
-                termDictionary[term] = new DictionaryEntry
-                {
-                    PostingListId = postingsListId,
-                    PostingListSize = postingList.Count
-                };
+                postingLists[postingsListId.Value] = postingList;
             }
-            else // else, if the term doesn't yet exist in the dictionary, add it.
+            else
             {
                 // Add the new posting list
                 postingLists.Add(nextFreePostingListId, documentIds.OrderBy(id => id).ToList());
-
                 for (int i = 0; i < term.Length; i++)
                 {
-                    // Add the new term
-                    termDictionary.Add(
-                        term,
-                        new DictionaryEntry
-                        {
-                            PostingListId = nextFreePostingListId,
-                            PostingListSize = documentIds.Count
-                        }
-                    );
+                    prefixTree.Add(term, nextFreePostingListId);
 
                     // Rotate term by taking all the character starting from the second character and appending the first character to the end
                     term = term.Substring(1) + term[0];
@@ -109,35 +92,15 @@ namespace BooleanSearcher
         {
             // Use the same normalizer that was used to create the index to normalize this term.
             var normalizedTerm = normalizer.Normalize(new List<string> { term }).FirstOrDefault();
-            normalizedTerm = Rotate(normalizedTerm);
-            if (normalizedTerm.EndsWith("*")) // If the term had a wildcard, after rotating it will be at the end
-            {
-                normalizedTerm = normalizedTerm.TrimEnd('*');
-                return termDictionary
-                    .Keys.Where(k => k.StartsWith(normalizedTerm))
-                    .Select(k =>
-                        new PostingResult
-                        {
-                            Term = k,
-                            PostingsList = postingLists[termDictionary[k].PostingListId]
-                        }
-                    ).ToList();
-            }
-            else
-            {
-                if (!termDictionary.ContainsKey(normalizedTerm))
-                    return new List<PostingResult>();
-
-                var dictionaryEntry = termDictionary[normalizedTerm];
-                return new List<PostingResult>()
-                {
+            normalizedTerm = Rotate(normalizedTerm).TrimEnd('*');
+            var result = prefixTree.FindIdsWithPrefix(normalizedTerm);
+            return result.Select(k =>
                     new PostingResult
                     {
-                        Term = normalizedTerm,
-                        PostingsList = postingLists[dictionaryEntry.PostingListId]
+                        Term = k.Term,
+                        PostingsList = postingLists[k.PostingListId]
                     }
-                };
-            }
+                ).ToList();
         }
 
         /// <summary>
