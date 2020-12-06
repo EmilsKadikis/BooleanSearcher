@@ -14,8 +14,8 @@ namespace UnitTests
         public void QueryRunner_SingleTerm()
         {
             Mock<IIndex> indexMock = new Mock<IIndex>();
-            indexMock.Setup(m => m.PostingsList(It.Is<string>(x => x == "test"))).Returns(new List<int> { 1, 2, 4, 5, 6, 8, 9});
-            indexMock.Setup(m => m.PostingsList(It.Is<string>(x => x == "example"))).Returns(new List<int> { 2, 4, 6, 7, 9, 10});
+            indexMock.Setup(m => m.PostingsLists(It.Is<string>(x => x == "test"))).Returns(PostingListResult("test", new List<int> { 1, 2, 4, 5, 6, 8, 9 }));
+            indexMock.Setup(m => m.PostingsLists(It.Is<string>(x => x == "example"))).Returns(PostingListResult("example", new List<int> { 2, 4, 6, 7, 9, 10 }));
 
             var queryRunner = new QueryRunner(indexMock.Object);
 
@@ -25,13 +25,18 @@ namespace UnitTests
             Assert.AreEqual(7, result[3]);
         }
 
+        private static List<PostingResult> PostingListResult(string term, List<int> postingList)
+        {
+            return new List<PostingResult> { new PostingResult { Term = term, PostingsList = postingList } };
+        }
+
         [TestMethod]
         public void QueryRunner_TwoTerms()
         {
             Mock<IIndex> indexMock = new Mock<IIndex>();
-            indexMock.Setup(m => m.PostingsList(It.Is<string>(x => x == "test"))).Returns(new List<int> { 1, 2, 4, 5, 6, 8, 9 });
-            indexMock.Setup(m => m.PostingsList(It.Is<string>(x => x == "example"))).Returns(new List<int> { 2, 4, 6, 7, 9, 10 });
-            indexMock.Setup(m => m.PostingsList(It.Is<string>(x => x == "document"))).Returns(new List<int> { 1, 3, 7, 9, 10 });
+            indexMock.Setup(m => m.PostingsLists(It.Is<string>(x => x == "test"))).Returns(PostingListResult("test", new List<int> { 1, 2, 4, 5, 6, 8, 9 }));
+            indexMock.Setup(m => m.PostingsLists(It.Is<string>(x => x == "example"))).Returns(PostingListResult("example", new List<int> { 2, 4, 6, 7, 9, 10 }));
+            indexMock.Setup(m => m.PostingsLists(It.Is<string>(x => x == "document"))).Returns(PostingListResult("document", new List<int> { 1, 3, 7, 9, 10 }));
 
             var queryRunner = new QueryRunner(indexMock.Object);
 
@@ -45,9 +50,9 @@ namespace UnitTests
         public void QueryRunner_TwoTerms_NoDocumentsInCommon()
         {
             Mock<IIndex> indexMock = new Mock<IIndex>();
-            indexMock.Setup(m => m.PostingsList(It.Is<string>(x => x == "test"))).Returns(new List<int> { 1, 2, 3, 5 });
-            indexMock.Setup(m => m.PostingsList(It.Is<string>(x => x == "example"))).Returns(new List<int> { 6, 7, 9, 10 });
-            indexMock.Setup(m => m.PostingsList(It.Is<string>(x => x == "document"))).Returns(new List<int> { 1, 3, 7, 9, 10 });
+            indexMock.Setup(m => m.PostingsLists(It.Is<string>(x => x == "test"))).Returns(PostingListResult("test", new List<int> { 1, 2, 3, 5 }));
+            indexMock.Setup(m => m.PostingsLists(It.Is<string>(x => x == "example"))).Returns(PostingListResult("example", new List<int> { 6, 7, 9, 10 }));
+            indexMock.Setup(m => m.PostingsLists(It.Is<string>(x => x == "document"))).Returns(PostingListResult("document", new List<int> { 1, 3, 7, 9, 10 }));
 
             var queryRunner = new QueryRunner(indexMock.Object);
 

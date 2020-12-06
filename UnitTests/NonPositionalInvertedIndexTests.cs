@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using BooleanSearcher;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -33,7 +34,7 @@ namespace UnitTests
             };
 
             IIndex index = new NonPositionalInvertedIndex(documents);
-            var result = index.PostingsList("Lorem");
+            var result = index.PostingsLists("Lorem").First().PostingsList;
 
             Assert.AreEqual(2, result.Count);
             Assert.AreEqual(2, result[0]);

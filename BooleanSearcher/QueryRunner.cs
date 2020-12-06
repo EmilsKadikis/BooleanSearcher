@@ -23,7 +23,14 @@ namespace BooleanSearcher
         /// <returns>Posting list of passed term, empty list if it's not in the index (and hence not in any of the documents).</returns>
         public List<int> Query(string term)
         {
-            return index.PostingsList(term);
+            if (term.Contains("*"))
+                return index.PostingsLists(term)
+                    .SelectMany(x => x.PostingsList)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
+            else
+                return index.PostingsLists(term).FirstOrDefault().PostingsList ?? new List<int>();
         }
 
         /// <summary>
@@ -34,18 +41,18 @@ namespace BooleanSearcher
         /// <returns>Posting list of the result.</returns>
         public List<int> Query(string firstTerm, string secondTerm)
         {
-            var firstPostingList = index.PostingsList(firstTerm);
-            var secondPostingList = index.PostingsList(secondTerm);
+            var firstPostingList = Query(firstTerm);
+            var secondPostingList = Query(secondTerm);
 
             return Intersect(firstPostingList, secondPostingList);
         }
 
         /// <summary>
-        /// 
+        /// Does intersection algorithm as described in the lecture.
         /// </summary>
         /// <param name="firstPostingList"></param>
         /// <param name="secondPostingList"></param>
-        /// <returns></returns>
+        /// <returns>Sorted list of all the document ids that were in both lists</returns>
         private List<int> Intersect(List<int> firstPostingList, List<int> secondPostingList)
         {
             var intersection = new List<int>();
